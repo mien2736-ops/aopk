@@ -11,7 +11,7 @@ const Header: React.FC<HeaderProps> = ({ onLogout }) => {
     <div className="bg-indigo-600 text-white p-5 rounded-b-[2.5rem] shadow-lg sticky top-0 z-20">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">AAPK 나트랑 여행</h1>
+          <h1 className="text-2xl font-bold tracking-tight">AOPK 나트랑 여행</h1>
           <p className="text-indigo-100 text-sm flex items-center gap-1 mt-1 opacity-90">
             <MapPin size={14} /> 멜리아 빈펄 리조트 (The Level)
           </p>
