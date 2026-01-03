@@ -1,185 +1,112 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, set, off } from 'firebase/database';
 import { TabType, Expense, User, DaySchedule } from './types';
-import { INITIAL_ITINERARY, GROUP_SIZE } from './constants';
+import { INITIAL_ITINERARY, TRIP_ID } from './constants';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import ItineraryTab from './tabs/ItineraryTab';
 import ExpenseTab from './tabs/ExpenseTab';
 import InfoTab from './tabs/InfoTab';
-import { db, auth } from './firebase';
-import { 
-  collection, 
-  onSnapshot, 
-  doc, 
-  setDoc, 
-  query, 
-  orderBy, 
-  getDoc,
-  deleteDoc
-} from 'firebase/firestore';
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDF0j11UMATdPxHn7k3qMYTfSYpAz31464",
+  authDomain: "aapk-b76b3.firebaseapp.com",
+  projectId: "aapk-b76b3",
+  storageBucket: "aapk-b76b3.firebasestorage.app",
+  messagingSenderId: "111545315428",
+  appId: "1:111545315428:web:56e33ad41e5b3ddf1a6f71",
+  measurementId: "G-VF3M6DHX3G"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('itinerary');
   const [user, setUser] = useState<User | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [itinerary, setItinerary] = useState<DaySchedule[]>(INITIAL_ITINERARY);
-  const [loading, setLoading] = useState(true);
-  const [authReady, setAuthReady] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date>(new Date());
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // 1. Firebase Auth & User Profile
+  // 1. Handle User Session (Auto-login for link access)
   useEffect(() => {
-    // Ensure the user is authenticated with Firebase for Firestore permissions
-    const initAuth = async () => {
-      try {
-        await signInAnonymously(auth);
-      } catch (err) {
-        console.error("Firebase Auth Error:", err);
-      }
-    };
-
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setAuthReady(true);
-        
-        // Handle local user profile (display name only)
-        const savedUser = localStorage.getItem('trip_user');
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-        } else {
-          const anonymousUser = { 
-            id: firebaseUser.uid, 
-            name: '익명' 
-          };
-          setUser(anonymousUser);
-          localStorage.setItem('trip_user', JSON.stringify(anonymousUser));
-        }
-      }
-    });
-
-    initAuth();
-    return () => unsubscribe();
+    const savedUser = localStorage.getItem('trip_user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    } else {
+      const anonymousUser = { id: 'anon-' + Math.random().toString(36).substr(2, 5), name: '익명' };
+      setUser(anonymousUser);
+      localStorage.setItem('trip_user', JSON.stringify(anonymousUser));
+    }
   }, []);
 
-  // 2. Real-time Firebase Sync: Expenses
+  // 2. Real-time Database Synchronization
   useEffect(() => {
-    if (!authReady) return;
+    if (!TRIP_ID) return;
 
-    const q = query(collection(db, "expenses"), orderBy("timestamp", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const expenseData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        // Convert Firestore Timestamp to number if necessary to prevent rendering errors
-        const timestamp = typeof data.timestamp === 'object' && data.timestamp.toMillis 
-          ? data.timestamp.toMillis() 
-          : (data.timestamp || Date.now());
-          
-        return {
-          id: doc.id,
-          ...data,
-          timestamp
-        } as Expense;
-      });
-      setExpenses(expenseData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Firebase Expense Sync Error:", error);
-      // Don't set loading false here yet if we want to retry or show error UI
-      if (error.code === 'permission-denied') {
-        setLoading(false);
+    setIsSyncing(true);
+    const tripRef = ref(db, `trips/${TRIP_ID}`);
+
+    const unsubscribe = onValue(tripRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        if (data.expenses) {
+          // Firebase might return an object for lists, convert to array if needed
+          const expensesArray = Array.isArray(data.expenses) ? data.expenses : Object.values(data.expenses);
+          setExpenses(expensesArray.reverse() as Expense[]);
+        } else {
+          setExpenses([]);
+        }
+        
+        if (data.itinerary) {
+          setItinerary(data.itinerary as DaySchedule[]);
+        }
+      } else {
+        // First time initialization in Firebase
+        set(tripRef, {
+          itinerary: INITIAL_ITINERARY,
+          expenses: [],
+          updatedAt: Date.now()
+        });
       }
+      setLastSynced(new Date());
+      setIsSyncing(false);
+    }, (error) => {
+      console.error("Firebase sync error:", error);
+      setIsSyncing(false);
     });
 
-    return () => unsubscribe();
-  }, [authReady]);
+    return () => off(tripRef);
+  }, []);
 
-  // 3. Real-time Firebase Sync: Itinerary
-  useEffect(() => {
-    if (!authReady) return;
+  const saveExpenses = useCallback((newExpenses: Expense[]) => {
+    // We reverse back for storage because we display newest first in UI
+    const storageData = [...newExpenses].reverse();
+    set(ref(db, `trips/${TRIP_ID}/expenses`), storageData);
+    set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
+  }, []);
 
-    const itineraryDoc = doc(db, "trips", "itinerary");
-    
-    const checkAndSeed = async () => {
-      try {
-        const docSnap = await getDoc(itineraryDoc);
-        if (!docSnap.exists()) {
-          await setDoc(itineraryDoc, { data: INITIAL_ITINERARY });
-        }
-      } catch (err) {
-        console.error("Itinerary Seed Error:", err);
-      }
-    };
-    checkAndSeed();
-
-    const unsubscribe = onSnapshot(itineraryDoc, (docSnap) => {
-      if (docSnap.exists()) {
-        const rawData = docSnap.data().data;
-        if (Array.isArray(rawData)) {
-          setItinerary(rawData as DaySchedule[]);
-        }
-      }
-    }, (error) => {
-      console.error("Itinerary Sync Error:", error);
-    });
-
-    return () => unsubscribe();
-  }, [authReady]);
-
-  // Handle updates by comparing states and updating Firestore collections
-  const handleUpdateExpenses = useCallback(async (newExpenses: Expense[]) => {
-    if (!authReady) return;
-
-    try {
-      // Determine if it was a delete or add
-      if (newExpenses.length < expenses.length) {
-        const deleted = expenses.find(e => !newExpenses.find(ne => ne.id === e.id));
-        if (deleted) {
-          await deleteDoc(doc(db, "expenses", deleted.id));
-        }
-      } else if (newExpenses.length > expenses.length) {
-        // Find newly added item (usually the first one in UI logic)
-        const added = newExpenses.find(ne => !expenses.find(e => e.id === ne.id));
-        if (added) {
-          await setDoc(doc(db, "expenses", added.id), added);
-        }
-      }
-    } catch (err) {
-      console.error("Expense update error:", err);
-      alert("지출 내역 업데이트에 실패했습니다. (권한 오류)");
-    }
-  }, [expenses, authReady]);
-
-  const saveItinerary = useCallback(async (newItinerary: DaySchedule[]) => {
-    if (!authReady) return;
-    
-    try {
-      const itineraryDoc = doc(db, "trips", "itinerary");
-      await setDoc(itineraryDoc, { data: newItinerary });
-    } catch (err) {
-      console.error("Itinerary update error:", err);
-      alert("일정 업데이트에 실패했습니다.");
-    }
-  }, [authReady]);
+  const saveItinerary = useCallback((newItinerary: DaySchedule[]) => {
+    set(ref(db, `trips/${TRIP_ID}/itinerary`), newItinerary);
+    set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('trip_user');
     window.location.reload();
   };
 
-  if (!user || loading || !authReady) {
+  if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 mb-2">실시간 데이터 연결 중</h2>
-            <p className="text-slate-400 text-sm">Nha Trang 여행 정보를 불러오고 있습니다...</p>
-          </div>
-          {/* Helpful message for permission issues */}
-          <p className="text-[10px] text-slate-300 max-w-xs">
-            연결이 오래 걸릴 경우 Firebase 보안 규칙이나 인터넷 설정을 확인해주세요.
-          </p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-pulse text-indigo-600 font-bold flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          Firebase 연결 중...
         </div>
       </div>
     );
@@ -187,7 +114,11 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 max-w-md mx-auto relative shadow-xl overflow-hidden">
-      <Header onLogout={handleLogout} />
+      <Header 
+        onLogout={handleLogout} 
+        isSyncing={isSyncing} 
+        lastSynced={lastSynced}
+      />
       
       <main className="flex-1 overflow-y-auto pb-24 no-scrollbar">
         {activeTab === 'itinerary' && (
@@ -199,7 +130,7 @@ const App: React.FC = () => {
         {activeTab === 'expenses' && (
           <ExpenseTab 
             expenses={expenses} 
-            onUpdate={handleUpdateExpenses} 
+            onUpdate={saveExpenses} 
             user={user}
           />
         )}

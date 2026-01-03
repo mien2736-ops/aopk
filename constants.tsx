@@ -5,6 +5,12 @@ import { Category, DaySchedule, Currency } from './types';
 export const VND_TO_KRW_RATE = 0.055;
 export const GROUP_SIZE = 6;
 
+// 실시간 공유를 위한 고유 트립 ID (이 값을 공유하는 사람들끼리 데이터가 동기화됨)
+export const TRIP_ID = 'AAPK_NHATRANG_2026_MASTER';
+// 공용 무료 JSON 저장소 API (실제 서비스 시에는 Supabase나 Firebase 사용 권장)
+// 여기서는 실시간 시뮬레이션을 위해 localStorage와 BroadcastChannel을 고도화합니다.
+export const SYNC_INTERVAL = 5000; 
+
 export const EXPENSE_DATES = ['여행전', '3/20', '3/21', '3/22', '3/23', '3/24', '여행후'];
 export const PAYERS = ['은별', '소연', '다현', '우현', '희진', '민영'];
 
