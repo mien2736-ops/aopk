@@ -1,0 +1,5 @@
+{
+  "name": "Nha Trang Group Trip Manager",
+  "description": "A real-time itinerary and expense sharing app for group travel to Nha Trang, featuring currency conversion, N-way splitting, and resort activity tracking.",
+  "requestFramePermissions": []
+}
