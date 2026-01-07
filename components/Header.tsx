@@ -31,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({ onLogout, isSyncing, lastSynced }) => {
     <div className="bg-indigo-600 text-white p-5 rounded-b-[2.5rem] shadow-lg sticky top-0 z-20 transition-all">
       <div className="flex justify-between items-start mb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">AAPK 나트랑 여행</h1>
+          <h1 className="text-2xl font-bold tracking-tight">APPK 나트랑 여행</h1>
           <p className="text-indigo-100 text-[10px] flex items-center gap-1 mt-0.5 opacity-80 uppercase font-black tracking-widest">
             <Radio size={10} className={`${isSyncing ? 'animate-pulse text-emerald-400' : 'text-emerald-300'}`} /> 
             Firebase Cloud Live
