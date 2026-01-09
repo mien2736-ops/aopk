@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { LogOut, Calendar, Clock, MapPin, RefreshCw, Radio } from 'lucide-react';
+import { LogOut, Clock, MapPin, RefreshCw, Radio, Timer } from 'lucide-react';
 
 interface HeaderProps {
   onLogout: () => void;
@@ -17,7 +17,6 @@ const Header: React.FC<HeaderProps> = ({ onLogout, isSyncing, lastSynced }) => {
   }, []);
 
   const formatTime = (date: Date, offset: number) => {
-    // UTC 시간을 구한 뒤 오프셋 적용
     const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
     const targetDate = new Date(utc + (3600000 * offset));
     return targetDate.toLocaleTimeString('ko-KR', { 
@@ -27,11 +26,23 @@ const Header: React.FC<HeaderProps> = ({ onLogout, isSyncing, lastSynced }) => {
     });
   };
 
+  const calculateDDay = () => {
+    const target = new Date('2026-03-20T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = target.getTime() - today.getTime();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    
+    if (days > 0) return `D-${days}`;
+    if (days === 0) return 'D-Day';
+    return `Day ${Math.abs(days) + 1}`;
+  };
+
   return (
     <div className="bg-indigo-600 text-white p-5 rounded-b-[2.5rem] shadow-lg sticky top-0 z-20 transition-all">
       <div className="flex justify-between items-start mb-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">APPK 나트랑 여행</h1>
+          <h1 className="text-xl font-black tracking-tight">APPK 나트랑여행 <span className="text-indigo-200 font-medium text-sm ml-1">(March 20~23)</span></h1>
           <p className="text-indigo-100 text-[10px] flex items-center gap-1 mt-0.5 opacity-80 uppercase font-black tracking-widest">
             <Radio size={10} className={`${isSyncing ? 'animate-pulse text-emerald-400' : 'text-emerald-300'}`} /> 
             Firebase Cloud Live
@@ -55,21 +66,23 @@ const Header: React.FC<HeaderProps> = ({ onLogout, isSyncing, lastSynced }) => {
         <MapPin size={12} /> 멜리아 빈펄 리조트 (The Level)
       </p>
 
-      <div className="flex gap-3">
-        <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
-          <Calendar size={14} className="opacity-70" />
-          <span className="text-[11px] font-bold">3/20 - 3/23</span>
+      <div className="flex gap-2 items-center">
+        {/* D-Day Badge - Consistent color, no pulse */}
+        <div className="flex-none flex items-center gap-2 bg-indigo-500/40 px-4 py-2.5 rounded-xl border border-white/10 shadow-sm">
+          <Timer size={16} className="text-white" />
+          <span className="text-sm font-black tracking-tighter">{calculateDDay()}</span>
         </div>
         
-        {/* Real-time Clocks */}
-        <div className="flex-1 flex gap-2">
-          <div className="flex-1 flex flex-col items-center justify-center bg-black/20 px-2 py-1 rounded-xl border border-white/5">
-            <span className="text-[8px] opacity-60 font-bold uppercase">나트랑</span>
-            <span className="text-[11px] font-black tracking-tighter">{formatTime(now, 7)}</span>
+        {/* Consolidated Real-time Clocks - Larger size to match D-Day */}
+        <div className="flex-1 flex items-center justify-center gap-4 bg-black/20 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">나트랑</span>
+            <span className="text-sm font-black tracking-tight">{formatTime(now, 7)}</span>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center bg-black/20 px-2 py-1 rounded-xl border border-white/5">
-            <span className="text-[8px] opacity-60 font-bold uppercase">서울</span>
-            <span className="text-[11px] font-black tracking-tighter">{formatTime(now, 9)}</span>
+          <div className="w-[1px] h-4 bg-white/20"></div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">서울</span>
+            <span className="text-sm font-black tracking-tight">{formatTime(now, 9)}</span>
           </div>
         </div>
       </div>

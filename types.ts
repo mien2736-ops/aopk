@@ -42,7 +42,14 @@ export interface DaySchedule {
   resortProgram?: Activity[];
 }
 
-export type TabType = 'itinerary' | 'expenses' | 'info';
+export interface GameIdea {
+  id: string;
+  text: string;
+  createdBy: string;
+  timestamp: number;
+}
+
+export type TabType = 'itinerary' | 'expenses' | 'games' | 'info';
 
 export interface User {
   id: string;

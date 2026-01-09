@@ -2,12 +2,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, off } from 'firebase/database';
-import { TabType, Expense, User, DaySchedule } from './types';
+import { TabType, Expense, User, DaySchedule, GameIdea } from './types';
 import { INITIAL_ITINERARY, TRIP_ID } from './constants';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import ItineraryTab from './tabs/ItineraryTab';
 import ExpenseTab from './tabs/ExpenseTab';
+import GamesTab from './tabs/GamesTab';
 import InfoTab from './tabs/InfoTab';
 
 // Firebase Configuration
@@ -30,10 +31,11 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [itinerary, setItinerary] = useState<DaySchedule[]>(INITIAL_ITINERARY);
+  const [gameIdeas, setGameIdeas] = useState<GameIdea[]>([]);
   const [lastSynced, setLastSynced] = useState<Date>(new Date());
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // 1. Handle User Session (Auto-login for link access)
+  // 1. Handle User Session
   useEffect(() => {
     const savedUser = localStorage.getItem('trip_user');
     if (savedUser) {
@@ -56,9 +58,8 @@ const App: React.FC = () => {
       const data = snapshot.val();
       if (data) {
         if (data.expenses) {
-          // Firebase might return an object for lists, convert to array if needed
           const expensesArray = Array.isArray(data.expenses) ? data.expenses : Object.values(data.expenses);
-          setExpenses(expensesArray.reverse() as Expense[]);
+          setExpenses([...expensesArray].reverse() as Expense[]);
         } else {
           setExpenses([]);
         }
@@ -66,11 +67,18 @@ const App: React.FC = () => {
         if (data.itinerary) {
           setItinerary(data.itinerary as DaySchedule[]);
         }
+
+        if (data.gameIdeas) {
+          const ideasArray = Array.isArray(data.gameIdeas) ? data.gameIdeas : Object.values(data.gameIdeas);
+          setGameIdeas(ideasArray as GameIdea[]);
+        } else {
+          setGameIdeas([]);
+        }
       } else {
-        // First time initialization in Firebase
         set(tripRef, {
           itinerary: INITIAL_ITINERARY,
           expenses: [],
+          gameIdeas: [],
           updatedAt: Date.now()
         });
       }
@@ -85,7 +93,6 @@ const App: React.FC = () => {
   }, []);
 
   const saveExpenses = useCallback((newExpenses: Expense[]) => {
-    // We reverse back for storage because we display newest first in UI
     const storageData = [...newExpenses].reverse();
     set(ref(db, `trips/${TRIP_ID}/expenses`), storageData);
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
@@ -93,6 +100,11 @@ const App: React.FC = () => {
 
   const saveItinerary = useCallback((newItinerary: DaySchedule[]) => {
     set(ref(db, `trips/${TRIP_ID}/itinerary`), newItinerary);
+    set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
+  }, []);
+
+  const saveGameIdeas = useCallback((newIdeas: GameIdea[]) => {
+    set(ref(db, `trips/${TRIP_ID}/gameIdeas`), newIdeas);
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
   }, []);
 
@@ -131,6 +143,13 @@ const App: React.FC = () => {
           <ExpenseTab 
             expenses={expenses} 
             onUpdate={saveExpenses} 
+            user={user}
+          />
+        )}
+        {activeTab === 'games' && (
+          <GamesTab 
+            gameIdeas={gameIdeas}
+            onUpdateIdeas={saveGameIdeas}
             user={user}
           />
         )}

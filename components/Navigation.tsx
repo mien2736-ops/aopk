@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, CreditCard, Info } from 'lucide-react';
+import { Calendar, CreditCard, Info, Dices } from 'lucide-react';
 import { TabType } from '../types';
 
 interface NavigationProps {
@@ -12,11 +12,12 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: 'itinerary', label: '일정표', icon: Calendar },
     { id: 'expenses', label: '정산', icon: CreditCard },
+    { id: 'games', label: '게임하기', icon: Dices },
     { id: 'info', label: '여행정보', icon: Info },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 px-6 py-4 flex justify-between items-center shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20">
+    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 px-4 py-4 flex justify-between items-center shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -24,7 +25,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
-            className={`flex flex-col items-center gap-1 transition-all ${
+            className={`flex flex-col items-center gap-1 transition-all flex-1 ${
               isActive ? 'text-indigo-600 scale-110' : 'text-slate-400'
             }`}
           >
