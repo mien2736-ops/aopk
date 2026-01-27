@@ -49,7 +49,16 @@ export interface GameIdea {
   timestamp: number;
 }
 
-export type TabType = 'itinerary' | 'expenses' | 'games' | 'info';
+export interface PrepItem {
+  id: string;
+  text: string;
+  isCommon: boolean;
+  assignedTo?: string[]; // 다중 담당자 지원을 위해 배열로 변경
+  isCompleted: boolean;
+  createdBy: string;
+}
+
+export type TabType = 'itinerary' | 'expenses' | 'games' | 'info' | 'prep';
 
 export interface User {
   id: string;

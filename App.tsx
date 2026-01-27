@@ -2,14 +2,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, off } from 'firebase/database';
-import { TabType, Expense, User, DaySchedule, GameIdea } from './types';
-import { INITIAL_ITINERARY, TRIP_ID } from './constants';
+import { TabType, Expense, User, DaySchedule, GameIdea, PrepItem } from './types';
+import { INITIAL_ITINERARY, TRIP_ID, RECOMMENDED_PREP_ITEMS } from './constants';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import ItineraryTab from './tabs/ItineraryTab';
 import ExpenseTab from './tabs/ExpenseTab';
 import GamesTab from './tabs/GamesTab';
 import InfoTab from './tabs/InfoTab';
+import PrepTab from './tabs/PrepTab';
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -32,6 +33,7 @@ const App: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [itinerary, setItinerary] = useState<DaySchedule[]>(INITIAL_ITINERARY);
   const [gameIdeas, setGameIdeas] = useState<GameIdea[]>([]);
+  const [prepItems, setPrepItems] = useState<PrepItem[]>([]);
   const [lastSynced, setLastSynced] = useState<Date>(new Date());
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -74,11 +76,21 @@ const App: React.FC = () => {
         } else {
           setGameIdeas([]);
         }
+
+        if (data.prepItems) {
+          const prepArray = Array.isArray(data.prepItems) ? data.prepItems : Object.values(data.prepItems);
+          setPrepItems(prepArray as PrepItem[]);
+        } else {
+          // 데이터가 없으면 추천 리스트로 초기화 시도
+          setPrepItems(RECOMMENDED_PREP_ITEMS);
+          set(ref(db, `trips/${TRIP_ID}/prepItems`), RECOMMENDED_PREP_ITEMS);
+        }
       } else {
         set(tripRef, {
           itinerary: INITIAL_ITINERARY,
           expenses: [],
           gameIdeas: [],
+          prepItems: RECOMMENDED_PREP_ITEMS,
           updatedAt: Date.now()
         });
       }
@@ -93,8 +105,7 @@ const App: React.FC = () => {
   }, []);
 
   const saveExpenses = useCallback((newExpenses: Expense[]) => {
-    const storageData = [...newExpenses].reverse();
-    set(ref(db, `trips/${TRIP_ID}/expenses`), storageData);
+    set(ref(db, `trips/${TRIP_ID}/expenses`), [...newExpenses].reverse());
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
   }, []);
 
@@ -105,6 +116,11 @@ const App: React.FC = () => {
 
   const saveGameIdeas = useCallback((newIdeas: GameIdea[]) => {
     set(ref(db, `trips/${TRIP_ID}/gameIdeas`), newIdeas);
+    set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
+  }, []);
+
+  const savePrepItems = useCallback((newItems: PrepItem[]) => {
+    set(ref(db, `trips/${TRIP_ID}/prepItems`), newItems);
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
   }, []);
 
@@ -155,6 +171,13 @@ const App: React.FC = () => {
         )}
         {activeTab === 'info' && (
           <InfoTab />
+        )}
+        {activeTab === 'prep' && (
+          <PrepTab 
+            prepItems={prepItems}
+            onUpdate={savePrepItems}
+            user={user}
+          />
         )}
       </main>
 
