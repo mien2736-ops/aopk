@@ -261,11 +261,7 @@ const MinimalListItem: React.FC<MinimalListItemProps> = ({ item, onToggle, onRem
               {name}
             </span>
           ))}
-          {!item.isCommon && item.createdBy !== '시스템' && (!item.assignedTo || item.assignedTo.length === 0) && (
-            <span className="text-[9px] font-bold text-slate-300 bg-slate-50/80 px-1.5 py-0.5 rounded">
-              {item.createdBy}
-            </span>
-          )}
+          {/* 생성자 표시는 제거함 (사용자 요청) */}
           {!item.isCommon && item.createdBy === '시스템' && (
             <span className="text-[9px] font-black text-blue-400/80 bg-blue-50/80 border border-blue-100 px-1.5 py-0.5 rounded">
               필수
