@@ -44,9 +44,18 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({ itinerary, onUpdate }) => {
   const updateActivity = (dayId: string, activityId: string, updates: Partial<Activity>) => {
     const updated = itinerary.map(day => {
       if (day.id === dayId) {
+        // 타임라인 내 아이템 업데이트 및 정렬
+        const updatedTimeline = day.timeline.map(a => a.id === activityId ? { ...a, ...updates } : a);
+        const sortedTimeline = [...updatedTimeline].sort((a, b) => a.time.localeCompare(b.time));
+
+        // 리조트 프로그램 내 아이템 업데이트 및 정렬 (필요시)
+        const updatedResort = day.resortProgram?.map(a => a.id === activityId ? { ...a, ...updates } : a);
+        const sortedResort = updatedResort ? [...updatedResort].sort((a, b) => a.time.localeCompare(b.time)) : undefined;
+
         return {
           ...day,
-          timeline: day.timeline.map(a => a.id === activityId ? { ...a, ...updates } : a)
+          timeline: sortedTimeline,
+          resortProgram: sortedResort
         };
       }
       return day;
@@ -62,10 +71,13 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({ itinerary, onUpdate }) => {
           time,
           description: desc
         };
+        const targetList = type === 'timeline' ? 'timeline' : 'resortProgram';
+        const updatedList = [...(day[targetList] || []), newActivity];
+        const sortedList = updatedList.sort((a, b) => a.time.localeCompare(b.time));
+
         return {
           ...day,
-          [type === 'timeline' ? 'timeline' : 'resortProgram']: 
-            [...(day[type === 'timeline' ? 'timeline' : 'resortProgram'] || []), newActivity].sort((a,b) => a.time.localeCompare(b.time))
+          [targetList]: sortedList
         };
       }
       return day;
