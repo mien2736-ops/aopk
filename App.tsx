@@ -27,6 +27,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// Firebase helper to remove undefined properties
+const sanitizeData = (data: any) => JSON.parse(JSON.stringify(data));
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('itinerary');
   const [user, setUser] = useState<User | null>(null);
@@ -83,16 +86,16 @@ const App: React.FC = () => {
         } else {
           // 데이터가 없으면 추천 리스트로 초기화 시도
           setPrepItems(RECOMMENDED_PREP_ITEMS);
-          set(ref(db, `trips/${TRIP_ID}/prepItems`), RECOMMENDED_PREP_ITEMS);
+          set(ref(db, `trips/${TRIP_ID}/prepItems`), sanitizeData(RECOMMENDED_PREP_ITEMS));
         }
       } else {
-        set(tripRef, {
+        set(tripRef, sanitizeData({
           itinerary: INITIAL_ITINERARY,
           expenses: [],
           gameIdeas: [],
           prepItems: RECOMMENDED_PREP_ITEMS,
           updatedAt: Date.now()
-        });
+        }));
       }
       setLastSynced(new Date());
       setIsSyncing(false);
@@ -105,22 +108,22 @@ const App: React.FC = () => {
   }, []);
 
   const saveExpenses = useCallback((newExpenses: Expense[]) => {
-    set(ref(db, `trips/${TRIP_ID}/expenses`), [...newExpenses].reverse());
+    set(ref(db, `trips/${TRIP_ID}/expenses`), sanitizeData([...newExpenses].reverse()));
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
   }, []);
 
   const saveItinerary = useCallback((newItinerary: DaySchedule[]) => {
-    set(ref(db, `trips/${TRIP_ID}/itinerary`), newItinerary);
+    set(ref(db, `trips/${TRIP_ID}/itinerary`), sanitizeData(newItinerary));
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
   }, []);
 
   const saveGameIdeas = useCallback((newIdeas: GameIdea[]) => {
-    set(ref(db, `trips/${TRIP_ID}/gameIdeas`), newIdeas);
+    set(ref(db, `trips/${TRIP_ID}/gameIdeas`), sanitizeData(newIdeas));
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
   }, []);
 
   const savePrepItems = useCallback((newItems: PrepItem[]) => {
-    set(ref(db, `trips/${TRIP_ID}/prepItems`), newItems);
+    set(ref(db, `trips/${TRIP_ID}/prepItems`), sanitizeData(newItems));
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
   }, []);
 

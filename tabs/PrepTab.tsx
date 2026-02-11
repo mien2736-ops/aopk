@@ -19,11 +19,18 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
   const filteredItems = useMemo(() => {
     if (activeFilter === '전체') return prepItems;
     return prepItems.filter(item => {
-      if (item.isCommon) {
-        return item.assignedTo?.includes(activeFilter);
-      } else {
-        return item.createdBy === '시스템' || item.createdBy === activeFilter;
+      // 1. '시스템'이 만든 개인 필수품은 모든 멤버의 개인탭에 노출
+      if (!item.isCommon && item.createdBy === '시스템') return true;
+      
+      // 2. 담당자(assignedTo)가 지정된 경우, 해당 담당자의 탭에 노출
+      if (item.assignedTo && item.assignedTo.includes(activeFilter)) return true;
+      
+      // 3. 담당자가 지정되지 않은 개인 물품은 생성자 본인의 탭에 노출
+      if (!item.isCommon && (!item.assignedTo || item.assignedTo.length === 0)) {
+        return item.createdBy === activeFilter;
       }
+      
+      return false;
     });
   }, [prepItems, activeFilter]);
 
@@ -36,7 +43,7 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
   const toggleAssignee = (name: string) => {
     setSelectedAssignees(prev => {
       if (prev.includes(name)) return prev.filter(n => n !== name);
-      if (prev.length >= 5) return prev;
+      if (prev.length >= 6) return prev;
       return [...prev, name];
     });
   };
@@ -49,10 +56,17 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
       id: Math.random().toString(36).substr(2, 9),
       text: newItemText.trim(),
       isCommon: isCommonMode,
-      assignedTo: isCommonMode && selectedAssignees.length > 0 ? selectedAssignees : undefined,
       isCompleted: false,
       createdBy: user.name
     };
+
+    // 공용/개인 상관없이 선택된 담당자가 있으면 추가
+    if (selectedAssignees.length > 0) {
+      newItem.assignedTo = selectedAssignees;
+    } else if (!isCommonMode) {
+      // 개인 물품인데 아무도 선택 안했으면 '나'를 담당자로 기본 지정
+      newItem.assignedTo = [user.name];
+    }
 
     onUpdate([...prepItems, newItem]);
     setNewItemText('');
@@ -107,7 +121,7 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
       </section>
 
       {/* Slim Add Form */}
-      <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 shadow-sm">
+      <section className="bg-white rounded-2xl border border-slate-200 p-4 space-y-4 shadow-sm">
         <div className="flex gap-2">
           <input
             type="text"
@@ -124,36 +138,37 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
           </button>
         </div>
         
-        <div className="flex items-center justify-between">
-          <div className="flex gap-1.5">
-            <button
-              onClick={() => setIsCommonMode(true)}
-              className={`px-3.5 py-2 rounded-lg text-[10px] font-bold border transition-all ${
-                isCommonMode ? 'bg-indigo-50 border-indigo-200 text-indigo-600 shadow-sm' : 'bg-white border-slate-100 text-slate-300'
-              }`}
-            >
-              공용 물품
-            </button>
-            <button
-              onClick={() => setIsCommonMode(false)}
-              className={`px-3.5 py-2 rounded-lg text-[10px] font-bold border transition-all ${
-                !isCommonMode ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-sm' : 'bg-white border-slate-100 text-slate-300'
-              }`}
-            >
-              개인 물품
-            </button>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => setIsCommonMode(true)}
+                className={`px-3.5 py-2 rounded-lg text-[10px] font-bold border transition-all ${
+                  isCommonMode ? 'bg-indigo-50 border-indigo-200 text-indigo-600 shadow-sm' : 'bg-white border-slate-100 text-slate-300'
+                }`}
+              >
+                공용 물품
+              </button>
+              <button
+                onClick={() => setIsCommonMode(false)}
+                className={`px-3.5 py-2 rounded-lg text-[10px] font-bold border transition-all ${
+                  !isCommonMode ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-sm' : 'bg-white border-slate-100 text-slate-300'
+                }`}
+              >
+                개인 물품
+              </button>
+            </div>
+            <span className="text-[10px] text-slate-400 font-bold">담당자 선택</span>
           </div>
-        </div>
 
-        {isCommonMode && (
-          <div className="pt-1.5 grid grid-cols-6 gap-1 animate-fadeIn">
+          <div className="grid grid-cols-6 gap-1 animate-fadeIn">
             {PAYERS.map(name => {
               const isSelected = selectedAssignees.includes(name);
               return (
                 <button
                   key={name}
                   onClick={() => toggleAssignee(name)}
-                  className={`py-1.5 rounded-md text-[10px] font-bold border transition-all ${
+                  className={`py-2 rounded-md text-[10px] font-bold border transition-all ${
                     isSelected ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'
                   }`}
                 >
@@ -162,7 +177,7 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
               );
             })}
           </div>
-        )}
+        </div>
       </section>
 
       {/* Checklist Rendering */}
@@ -173,7 +188,7 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
               <h3 className="text-[11px] font-black text-slate-400 px-1 uppercase tracking-wider flex items-center gap-2">
                 <LayoutList size={12} /> 공용물품 리스트
               </h3>
-              <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100">
+              <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
                 {prepItems.filter(i => i.isCommon).map(item => (
                   <MinimalListItem key={item.id} item={item} onToggle={toggleComplete} onRemove={removeItem} />
                 ))}
@@ -184,7 +199,7 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
               <h3 className="text-[11px] font-black text-slate-400 px-1 uppercase tracking-wider flex items-center gap-2">
                 <User size={12} /> 개인물품 리스트
               </h3>
-              <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100">
+              <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
                 {prepItems.filter(i => !i.isCommon).map(item => (
                   <MinimalListItem key={item.id} item={item} onToggle={toggleComplete} onRemove={removeItem} />
                 ))}
@@ -196,7 +211,7 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
             <h3 className="text-[11px] font-black text-indigo-500 px-1 uppercase tracking-wider flex items-center gap-2">
               <User size={12} /> {activeFilter}님의 체크리스트
             </h3>
-            <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100">
+            <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
               {filteredItems.map(item => (
                 <MinimalListItem key={item.id} item={item} onToggle={toggleComplete} onRemove={removeItem} />
               ))}
@@ -246,7 +261,7 @@ const MinimalListItem: React.FC<MinimalListItemProps> = ({ item, onToggle, onRem
               {name}
             </span>
           ))}
-          {!item.isCommon && item.createdBy !== '시스템' && (
+          {!item.isCommon && item.createdBy !== '시스템' && (!item.assignedTo || item.assignedTo.length === 0) && (
             <span className="text-[9px] font-bold text-slate-300 bg-slate-50/80 px-1.5 py-0.5 rounded">
               {item.createdBy}
             </span>
