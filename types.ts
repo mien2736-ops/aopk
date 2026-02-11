@@ -31,6 +31,7 @@ export interface Activity {
   description: string;
   isPaid?: boolean;
   requiresBooking?: boolean;
+  notes?: string; // 상세 메모 필드 추가
 }
 
 export interface DaySchedule {
