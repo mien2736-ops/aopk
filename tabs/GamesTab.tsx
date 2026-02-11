@@ -288,10 +288,6 @@ const GamesTab: React.FC<GamesTabProps> = ({ gameIdeas, onUpdateIdeas, user }) =
                           {idea.text}
                         </p>
                         <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 bg-indigo-200 text-indigo-600 rounded-full flex items-center justify-center text-[9px] font-black uppercase">
-                            {idea.createdBy[0]}
-                          </div>
-                          <span className="text-[10px] font-bold text-indigo-500">{idea.createdBy}</span>
                           <span className="text-[10px] text-slate-300 font-medium">
                             {new Date(idea.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>

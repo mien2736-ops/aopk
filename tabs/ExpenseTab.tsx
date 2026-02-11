@@ -194,8 +194,6 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, onUpdate, user }) => 
                 <div className="flex justify-between items-end mt-2">
                   <div className="text-[10px] text-slate-400 flex items-center gap-1">
                     {new Date(exp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    <span className="opacity-30">|</span>
-                    <span className="text-indigo-400">By {exp.createdBy}</span>
                     <CloudCheck size={10} className="text-emerald-400 ml-1" />
                   </div>
                   <div className="text-right">
