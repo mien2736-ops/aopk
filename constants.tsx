@@ -6,7 +6,7 @@ export const VND_TO_KRW_RATE = 0.055;
 export const GROUP_SIZE = 6;
 
 // 실시간 공유를 위한 고유 트립 ID
-export const TRIP_ID = 'AAPK_NHATRANG_2026_MASTER';
+export const TRIP_ID = 'AAPK_NHATRANG_2026_MARCH';
 export const SYNC_INTERVAL = 5000; 
 
 // 3/24 제외
@@ -55,9 +55,10 @@ export const INITIAL_ITINERARY: DaySchedule[] = [
       { id: 't1-7', time: '17:00', description: '🍹 The Level 칵테일 아워 (무제한)' },
     ],
     resortProgram: [
-      { id: 'rp1-1', time: '15:00 - 16:00', description: 'Mango show (Elyxr)' },
-      { id: 'rp1-2', time: '16:30', description: 'Aqua Fit (메인 풀)' },
-      { id: 'rp1-3', time: '16:45 - 17:45', description: 'Beach Sports Volley/football' },
+      { id: 'rp1-1', time: '15:00', description: '🥭 Mango Show (망고 쇼)', isPaid: true },
+      { id: 'rp1-2', time: '15:30', description: '🤽‍♀️ Pool Game (수영장 게임)', requiresBooking: true },
+      { id: 'rp1-3', time: '16:00', description: '🏓 Pickleball (피클볼)' },
+      { id: 'rp1-4', time: '19:00', description: '🎬 Movie Night (영화 감상)', requiresBooking: true },
     ]
   },
   {
@@ -73,15 +74,17 @@ export const INITIAL_ITINERARY: DaySchedule[] = [
       { id: 't2-5', time: '저녁', description: '리조트 내 식사 또는 배달' },
     ],
     resortProgram: [
-      { id: 'rp2-1', time: '07:00 - 08:00', description: 'Yin Yoga & meditation' },
-      { id: 'rp2-2', time: '07:30', description: 'Morning Jog' },
-      { id: 'rp2-3', time: '09:45 - 10:30', description: 'Cardio Dance' },
-      { id: 'rp2-4', time: '10:30 - 12:00', description: 'Cooking Class', isPaid: true, requiresBooking: true },
-      { id: 'rp2-5', time: '11:00 - 12:00', description: 'Aqua volley' },
-      { id: 'rp2-6', time: '14:15 - 15:00', description: 'Stretching' },
-      { id: 'rp2-7', time: '15:00 - 16:00', description: 'Coffee tasting', isPaid: true, requiresBooking: true },
-      { id: 'rp2-8', time: '16:00 - 17:30', description: 'Saturday Games (Adults/Family)' },
-      { id: 'rp2-9', time: '19:00 - 20:00', description: 'Lantern wish (Elyxr)' },
+      { id: 'rp2-1', time: '07:00', description: '🧘‍♀️ Hatha Yoga (하타 요가)', requiresBooking: true },
+      { id: 'rp2-2', time: '08:15', description: '🚲 Bike Tour (자전거 투어)', requiresBooking: true },
+      { id: 'rp2-3', time: '09:15', description: '🤸‍♀️ Stretching (스트레칭)', requiresBooking: true },
+      { id: 'rp2-4', time: '10:00', description: '🍳 Cooking Class (쿠킹 클래스)', isPaid: true },
+      { id: 'rp2-5', time: '11:00', description: '🤽‍♂️ Pool Game (수영장 게임)', requiresBooking: true },
+      { id: 'rp2-6', time: '12:00', description: '🐻 Mascot Dancing (마스코트 댄스)', requiresBooking: true },
+      { id: 'rp2-7', time: '14:00', description: '🎨 Non La Painting (논라 모자 페인팅)', isPaid: true, requiresBooking: true },
+      { id: 'rp2-8', time: '15:00', description: '☕️ Coffee Tasting (커피 테이스팅)', isPaid: true },
+      { id: 'rp2-9', time: '15:30', description: '🏐 Beach Volleyball (비치발리볼)', requiresBooking: true },
+      { id: 'rp2-10', time: '16:00', description: '🫧 Foam Pool Party (폼 풀 파티)', requiresBooking: true },
+      { id: 'rp2-11', time: '18:00 & 19:00', description: '🎸 Live Music (라이브 음악)' },
     ]
   },
   {
@@ -97,15 +100,17 @@ export const INITIAL_ITINERARY: DaySchedule[] = [
       { id: 't3-5', time: '22:00', description: '리조트 복귀' },
     ],
     resortProgram: [
-      { id: 'rp3-1', time: '07:00 - 08:00', description: 'Stretching' },
-      { id: 'rp3-2', time: '07:30', description: 'Bike tour', requiresBooking: true },
-      { id: 'rp3-3', time: '09:45 - 10:30', description: 'Cardio Box' },
-      { id: 'rp3-4', time: '10:30 - 12:00', description: 'Non La Paint', isPaid: true, requiresBooking: true },
-      { id: 'rp3-5', time: '11:00 - 12:00', description: 'Aqua volley' },
-      { id: 'rp3-6', time: '14:00 - 14:45', description: 'Pilates' },
-      { id: 'rp3-7', time: '15:00 - 16:00', description: 'Mango show (Elyxr)' },
-      { id: 'rp3-8', time: '16:30', description: 'Aqua Fit' },
-      { id: 'rp3-9', time: '16:45 - 17:45', description: 'Beach Sports' },
+      { id: 'rp3-1', time: '07:00', description: '🧘‍♂️ Meditation (명상)' },
+      { id: 'rp3-2', time: '08:15', description: '💃 Vietnamese Dancing Class (베트남 댄스 클래스)', requiresBooking: true },
+      { id: 'rp3-3', time: '09:15', description: '🌴 Coconut Leaf Craft (코코넛 잎 공예)', requiresBooking: true },
+      { id: 'rp3-4', time: '10:00', description: '🎲 Mandarin Square Capturing (베트남 전통놀이)' },
+      { id: 'rp3-5', time: '11:00', description: '💦 Aqua Gym (아쿠아 짐)', requiresBooking: true },
+      { id: 'rp3-6', time: '11:45', description: '🎻 Guitar & Violin (기타 & 바이올린 연주)' },
+      { id: 'rp3-7', time: '14:00', description: '🐟 Fish Feeding (물고기 먹이주기)', isPaid: true },
+      { id: 'rp3-8', time: '15:00', description: '🥭 Mango Show (망고 쇼)', isPaid: true },
+      { id: 'rp3-9', time: '15:30', description: '🏖️ Beach Game (비치 게임)' },
+      { id: 'rp3-10', time: '16:00', description: '🏓 Pickleball (피클볼)' },
+      { id: 'rp3-11', time: '19:00', description: '🏮 Floating Lantern Ceremony (소원 등 띄우기)', requiresBooking: true },
     ]
   },
   {
@@ -124,13 +129,16 @@ export const INITIAL_ITINERARY: DaySchedule[] = [
       { id: 't4-8', time: '04:25', description: '인천 도착 (3/24 화)' },
     ],
     resortProgram: [
-      { id: 'rp4-1', time: '07:00 - 08:00', description: 'Hatha Yoga' },
-      { id: 'rp4-2', time: '07:30', description: 'Bike tour', requiresBooking: true },
-      { id: 'rp4-3', time: '09:45 - 10:30', description: 'Cardio Box' },
-      { id: 'rp4-4', time: '10:30 - 12:00', description: 'Lantern craft', isPaid: true, requiresBooking: true },
-      { id: 'rp4-5', time: '11:00 - 12:00', description: 'Aqua volley' },
-      { id: 'rp4-6', time: '14:15 - 15:00', description: 'Stretching' },
-      { id: 'rp4-7', time: '15:00 - 16:00', description: 'Mango show' },
+      { id: 'rp4-1', time: '07:00', description: '🧘‍♀️ Yoga (요가)', requiresBooking: true },
+      { id: 'rp4-2', time: '08:15', description: '🏃‍♀️ Cardio (유산소 운동)', requiresBooking: true },
+      { id: 'rp4-3', time: '09:15', description: '🌱 Seedling Program (모종 심기 체험)', requiresBooking: true },
+      { id: 'rp4-4', time: '10:00', description: '🎯 Traditional Games (전통 놀이)', requiresBooking: true },
+      { id: 'rp4-5', time: '11:00', description: '💃 Aqua Zumba (아쿠아 줌바)', requiresBooking: true },
+      { id: 'rp4-6', time: '14:00', description: '🐟 Fish Feeding (물고기 먹이주기)', isPaid: true },
+      { id: 'rp4-7', time: '15:00', description: '🥭 Mango Show (망고 쇼)', isPaid: true },
+      { id: 'rp4-8', time: '15:30', description: '🏐 Beach Volleyball (비치발리볼)', requiresBooking: true },
+      { id: 'rp4-9', time: '16:00', description: '🎳 Petanque (페탕크)' },
+      { id: 'rp4-10', time: '19:00', description: '🎬 Movie Night (영화 감상)', requiresBooking: true },
     ]
   }
 ];

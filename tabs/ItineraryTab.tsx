@@ -187,7 +187,7 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({ itinerary, onUpdate }) => {
                               <p className="text-sm font-medium text-slate-700">
                                 {item.description}
                                 {item.isPaid && <span className="ml-1 text-orange-500" title="유료">💰</span>}
-                                {item.requiresBooking && <span className="ml-1 text-red-500" title="예약필수">📌</span>}
+                                {item.requiresBooking && <span className="ml-1 text-red-500" title="예약필수">📍</span>}
                               </p>
                             </div>
                           </div>
