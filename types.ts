@@ -59,6 +59,14 @@ export interface PrepItem {
   createdBy: string;
 }
 
+export interface Memo {
+  id: string;
+  title: string;
+  content: string;
+  updatedAt: number;
+  createdBy: string;
+}
+
 export type TabType = 'itinerary' | 'expenses' | 'games' | 'info' | 'prep';
 
 export interface User {

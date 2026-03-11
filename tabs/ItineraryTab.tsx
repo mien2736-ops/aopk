@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Plus, Trash2, Clock, Star, AlertCircle, ChevronLeft, Save, Edit3, MessageSquareText } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Clock, Star, AlertCircle, ChevronLeft, Save, Edit3, MessageSquareText, RefreshCw } from 'lucide-react';
 import { DaySchedule, Activity } from '../types';
+import { INITIAL_ITINERARY } from '../constants';
 
 interface ItineraryTabProps {
   itinerary: DaySchedule[];
@@ -15,6 +16,12 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({ itinerary, onUpdate }) => {
   const [editingActivity, setEditingActivity] = useState<{ dayId: string, activity: Activity } | null>(null);
   const [activeDayId, setActiveDayId] = useState<string | null>(null);
   const [detailView, setDetailView] = useState<{ dayId: string, activity: Activity } | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const handleReset = () => {
+    onUpdate(INITIAL_ITINERARY);
+    setShowResetConfirm(false);
+  };
 
   const toggleDay = (id: string) => {
     setOpenDay(openDay === id ? null : id);
@@ -263,15 +270,53 @@ const ItineraryTab: React.FC<ItineraryTabProps> = ({ itinerary, onUpdate }) => {
       ))}
 
       {/* Basic instructions */}
-      <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 flex gap-3 items-start">
-        <AlertCircle size={20} className="text-indigo-600 shrink-0 mt-0.5" />
-        <div className="text-[11px] text-slate-600 space-y-1">
-          <p className="font-bold text-indigo-700">일정 사용 팁</p>
-          <p>• 왼쪽 <strong>동그란 불렛</strong>을 누르면 상세 메모(시세표 등)를 남길 수 있는 서브 페이지로 이동합니다.</p>
-          <p>• 텍스트를 누르면 시간이나 내용을 바로 수정할 수 있습니다.</p>
-          <p>• 메모가 있는 일정은 불렛이 파란색으로 표시됩니다.</p>
+      <div className="p-4 space-y-3">
+        <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 flex gap-3 items-start">
+          <AlertCircle size={20} className="text-indigo-600 shrink-0 mt-0.5" />
+          <div className="text-[11px] text-slate-600 space-y-1">
+            <p className="font-bold text-indigo-700">일정 사용 팁</p>
+            <p>• 왼쪽 <strong>동그란 불렛</strong>을 누르면 상세 메모(시세표 등)를 남길 수 있는 서브 페이지로 이동합니다.</p>
+            <p>• 텍스트를 누르면 시간이나 내용을 바로 수정할 수 있습니다.</p>
+            <p>• 메모가 있는 일정은 불렛이 파란색으로 표시됩니다.</p>
+          </div>
         </div>
+
+        <button 
+          onClick={() => setShowResetConfirm(true)}
+          className="w-full py-4 bg-white border border-slate-200 rounded-2xl text-slate-400 text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
+        >
+          <RefreshCw size={14} /> 3월 업데이트 일정으로 초기화하기
+        </button>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl w-full max-w-xs p-6 shadow-2xl animate-scaleIn">
+            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mb-4">
+              <RefreshCw size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">일정 초기화</h3>
+            <p className="text-xs text-slate-500 leading-relaxed mb-6">
+              현재 저장된 모든 일정이 <strong>3월 최신 리조트 액티비티가 포함된 기본 일정</strong>으로 교체됩니다. (지출 내역은 유지됩니다)
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowResetConfirm(false)} 
+                className="flex-1 py-3 text-slate-500 font-bold text-sm"
+              >
+                취소
+              </button>
+              <button 
+                onClick={handleReset} 
+                className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-bold text-sm"
+              >
+                초기화 실행
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Modal */}
       {showAddModal && (

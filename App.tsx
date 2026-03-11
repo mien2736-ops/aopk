@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, off } from 'firebase/database';
-import { TabType, Expense, User, DaySchedule, GameIdea, PrepItem } from './types';
+import { TabType, Expense, User, DaySchedule, GameIdea, PrepItem, Memo } from './types';
 import { INITIAL_ITINERARY, TRIP_ID, RECOMMENDED_PREP_ITEMS } from './constants';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
@@ -37,6 +37,7 @@ const App: React.FC = () => {
   const [itinerary, setItinerary] = useState<DaySchedule[]>(INITIAL_ITINERARY);
   const [gameIdeas, setGameIdeas] = useState<GameIdea[]>([]);
   const [prepItems, setPrepItems] = useState<PrepItem[]>([]);
+  const [memos, setMemos] = useState<Memo[]>([]);
   const [lastSynced, setLastSynced] = useState<Date>(new Date());
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -70,7 +71,15 @@ const App: React.FC = () => {
         }
         
         if (data.itinerary) {
-          setItinerary(data.itinerary as DaySchedule[]);
+          // 리조트 프로그램은 항상 최신(3월) 버전으로 유지하되, 메인 타임라인은 사용자 데이터를 유지
+          const syncedItinerary = (data.itinerary as DaySchedule[]).map(day => {
+            const initialDay = INITIAL_ITINERARY.find(d => d.id === day.id);
+            return {
+              ...day,
+              resortProgram: initialDay?.resortProgram || day.resortProgram
+            };
+          });
+          setItinerary(syncedItinerary);
         }
 
         if (data.gameIdeas) {
@@ -88,12 +97,20 @@ const App: React.FC = () => {
           setPrepItems(RECOMMENDED_PREP_ITEMS);
           set(ref(db, `trips/${TRIP_ID}/prepItems`), sanitizeData(RECOMMENDED_PREP_ITEMS));
         }
+
+        if (data.memos) {
+          const memosArray = Array.isArray(data.memos) ? data.memos : Object.values(data.memos);
+          setMemos(memosArray as Memo[]);
+        } else {
+          setMemos([]);
+        }
       } else {
         set(tripRef, sanitizeData({
           itinerary: INITIAL_ITINERARY,
           expenses: [],
           gameIdeas: [],
           prepItems: RECOMMENDED_PREP_ITEMS,
+          memos: [],
           updatedAt: Date.now()
         }));
       }
@@ -124,6 +141,11 @@ const App: React.FC = () => {
 
   const savePrepItems = useCallback((newItems: PrepItem[]) => {
     set(ref(db, `trips/${TRIP_ID}/prepItems`), sanitizeData(newItems));
+    set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
+  }, []);
+
+  const saveMemos = useCallback((newMemos: Memo[]) => {
+    set(ref(db, `trips/${TRIP_ID}/memos`), sanitizeData(newMemos));
     set(ref(db, `trips/${TRIP_ID}/updatedAt`), Date.now());
   }, []);
 
@@ -173,7 +195,11 @@ const App: React.FC = () => {
           />
         )}
         {activeTab === 'info' && (
-          <InfoTab />
+          <InfoTab 
+            memos={memos}
+            onUpdateMemos={saveMemos}
+            user={user}
+          />
         )}
         {activeTab === 'prep' && (
           <PrepTab 

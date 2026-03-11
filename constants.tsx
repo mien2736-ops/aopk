@@ -6,7 +6,7 @@ export const VND_TO_KRW_RATE = 0.055;
 export const GROUP_SIZE = 6;
 
 // 실시간 공유를 위한 고유 트립 ID
-export const TRIP_ID = 'AAPK_NHATRANG_2026_MARCH';
+export const TRIP_ID = 'AAPK_NHATRANG_2026_MASTER';
 export const SYNC_INTERVAL = 5000; 
 
 // 3/24 제외
