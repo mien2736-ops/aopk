@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, Banknote, CreditCard, ChevronDown, Check, Calendar, User as UserIcon, Download, Share2, CloudUpload, CloudCheck } from 'lucide-react';
+import { Plus, Trash2, Banknote, CreditCard, ChevronDown, ChevronLeft, Check, Calendar, User as UserIcon, Download, Share2, CloudUpload, CloudCheck } from 'lucide-react';
 import { Expense, Category, Currency, User } from '../types';
 import { VND_TO_KRW_RATE, GROUP_SIZE, EXPENSE_DATES, PAYERS } from '../constants';
 
@@ -29,6 +29,33 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, onUpdate, user }) => 
       total: totalKRW,
       perPerson: totalKRW / GROUP_SIZE
     };
+  }, [expenses]);
+
+  const allGroupedExpenses = useMemo(() => {
+    const groups: { date: string, items: Expense[] }[] = [];
+    
+    // 최신 날짜가 상단에 오도록 역순으로 처리
+    [...EXPENSE_DATES].reverse().forEach(date => {
+      const items = expenses
+        .filter(exp => exp.expenseDate === date)
+        .sort((a, b) => b.timestamp - a.timestamp); // 같은 날짜 내에서도 최신순 정렬
+      
+      if (items.length > 0) {
+        groups.push({ date, items });
+      }
+    });
+
+    // 날짜 미지정 항목들 (가장 하단 또는 상단? 보통 미지정은 최신으로 간주하거나 별도 처리)
+    const noDateItems = expenses
+      .filter(exp => !exp.expenseDate)
+      .sort((a, b) => b.timestamp - a.timestamp);
+      
+    if (noDateItems.length > 0) {
+      // 미지정 항목은 가장 상단에 배치 (방금 막 추가한 항목일 가능성이 높으므로)
+      groups.unshift({ date: '미지정', items: noDateItems });
+    }
+
+    return groups;
   }, [expenses]);
 
   const exportToCSV = () => {
@@ -68,7 +95,6 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, onUpdate, user }) => 
     e.preventDefault();
     if (!amount || !description) return;
 
-    // Firebase는 undefined 값을 저장할 수 없으므로, 값이 있을 때만 필드를 추가합니다.
     const newExpense: any = {
       id: Math.random().toString(36).substr(2, 9),
       description,
@@ -113,99 +139,110 @@ const ExpenseTab: React.FC<ExpenseTabProps> = ({ expenses, onUpdate, user }) => 
     { type: Category.ACCOMMODATION, icon: '🏨', color: 'bg-purple-100 text-purple-600' },
   ];
 
-  return (
-    <div className="p-4 space-y-4">
-      {/* Summary Card */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-slate-500 font-bold text-xs uppercase tracking-wider">전체 지출 요약</h3>
-          <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full font-bold">인원 {GROUP_SIZE}명</span>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <p className="text-slate-400 text-xs mb-1">총 지출액 (KRW)</p>
-            <h2 className="text-3xl font-black text-slate-800">₩ {Math.round(stats.total).toLocaleString()}</h2>
+  const ExpenseItem = ({ exp }: { exp: Expense }) => (
+    <div key={exp.id} className="group bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3 animate-fadeIn">
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0 ${
+        categories.find(c => c.type === exp.category)?.color
+      }`}>
+        {categories.find(c => c.type === exp.category)?.icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col">
+            <h5 className="font-bold text-slate-800 text-sm truncate pr-2">{exp.description}</h5>
+            <div className="flex gap-2 items-center mt-0.5">
+              {exp.payer && (
+                <span className="text-indigo-500 text-[10px] font-bold flex items-center gap-0.5">
+                  <UserIcon size={10} /> {exp.payer}
+                </span>
+              )}
+              <span className="text-slate-400 text-[10px]">
+                {new Date(exp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
           </div>
-          <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
-            <div>
-              <p className="text-slate-400 text-[10px] mb-0.5">1인당 부담금</p>
-              <p className="text-lg font-bold text-indigo-600">₩ {Math.round(stats.perPerson).toLocaleString()}</p>
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <p className="font-bold text-slate-700 text-sm leading-none">{formatMoney(exp.amount, exp.currency)}</p>
+              {exp.currency === Currency.VND && (
+                <p className="text-[10px] text-slate-400 mt-1 font-medium">≈ ₩ {Math.round(exp.amount * VND_TO_KRW_RATE).toLocaleString()}</p>
+              )}
             </div>
             <button 
-              onClick={() => setShowForm(true)}
-              className="bg-indigo-600 text-white p-4 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform"
+              onClick={() => removeExpense(exp.id)}
+              className="text-slate-200 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <Plus size={24} />
+              <Trash2 size={14} />
             </button>
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Summary Card */}
+      <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-200">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-slate-400 font-bold text-xs uppercase tracking-wider">정산 요약</h3>
+          <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold">인원 {GROUP_SIZE}명</span>
+        </div>
+        <div className="flex justify-between items-end">
+          <div className="space-y-1">
+            <div className="flex items-baseline gap-2">
+              <p className="text-slate-400 text-xs">총액</p>
+              <p className="text-sm font-bold text-slate-600">₩ {Math.round(stats.total).toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-indigo-500 text-xs font-bold mb-0.5">1인 부담금</p>
+              <h2 className="text-2xl font-black text-indigo-600 leading-none">₩ {Math.round(stats.perPerson).toLocaleString()}</h2>
+            </div>
+          </div>
+          <button 
+            onClick={() => setShowForm(true)}
+            className="bg-indigo-600 text-white p-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
+      </div>
 
       {/* Expense List */}
-      <div className="space-y-3">
+      <div className="space-y-6">
         <div className="flex justify-between items-center px-1">
-          <h4 className="font-bold text-slate-700 text-sm">지출 내역</h4>
+          <h4 className="font-bold text-slate-700 text-sm uppercase tracking-wider">전체 지출 내역</h4>
           <button 
             onClick={exportToCSV}
-            className="flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors"
+            className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full hover:bg-indigo-100 transition-colors"
           >
             <Download size={12} />
-            Sheet 추출
+            CSV 추출
           </button>
         </div>
         
         {expenses.length === 0 ? (
           <div className="py-12 text-center bg-white rounded-3xl border border-dashed border-slate-300">
-            <Banknote className="mx-auto text-slate-200 mb-2" size={40} />
-            <p className="text-sm text-slate-400">등록된 지출 내역이 없습니다</p>
+            <Banknote className="mx-auto text-slate-200 mb-2" size={32} />
+            <p className="text-xs text-slate-400">등록된 지출 내역이 없습니다</p>
           </div>
         ) : (
-          expenses.map((exp) => (
-            <div key={exp.id} className="group bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 animate-fadeIn">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 ${
-                categories.find(c => c.type === exp.category)?.color
-              }`}>
-                {categories.find(c => c.type === exp.category)?.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <div className="flex flex-col">
-                    <h5 className="font-bold text-slate-800 truncate pr-2">{exp.description}</h5>
-                    <div className="flex gap-2 items-center mt-0.5">
-                      {exp.expenseDate && (
-                        <span className="bg-slate-100 text-slate-500 text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                          <Calendar size={8} /> {exp.expenseDate}
-                        </span>
-                      )}
-                      {exp.payer && (
-                        <span className="bg-indigo-50 text-indigo-500 text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                          <UserIcon size={8} /> {exp.payer}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => removeExpense(exp.id)}
-                    className="text-slate-300 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+          <div className="space-y-6">
+            {allGroupedExpenses.map((group) => (
+              <div key={group.date} className="space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-[1px] flex-1 bg-slate-100"></div>
+                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{group.date}</span>
+                  <div className="h-[1px] flex-1 bg-slate-100"></div>
                 </div>
-                <div className="flex justify-between items-end mt-2">
-                  <div className="text-[10px] text-slate-400 flex items-center gap-1">
-                    {new Date(exp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    <CloudCheck size={10} className="text-emerald-400 ml-1" />
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-slate-700 leading-none">{formatMoney(exp.amount, exp.currency)}</p>
-                    {exp.currency === Currency.VND && (
-                      <p className="text-[9px] text-slate-400 mt-1 font-medium">≈ ₩ {Math.round(exp.amount * VND_TO_KRW_RATE).toLocaleString()}</p>
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  {group.items.map((exp) => (
+                    <ExpenseItem key={exp.id} exp={exp} />
+                  ))}
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
