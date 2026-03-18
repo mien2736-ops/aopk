@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, off } from 'firebase/database';
 import { TabType, Expense, User, DaySchedule, GameIdea, PrepItem, Memo } from './types';
-import { INITIAL_ITINERARY, TRIP_ID, RECOMMENDED_PREP_ITEMS } from './constants';
+import { INITIAL_ITINERARY, TRIP_ID, RECOMMENDED_PREP_ITEMS, PAYERS } from './constants';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import ItineraryTab from './tabs/ItineraryTab';
@@ -33,6 +33,7 @@ const sanitizeData = (data: any) => JSON.parse(JSON.stringify(data));
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('itinerary');
   const [user, setUser] = useState<User | null>(null);
+  const [showNameModal, setShowNameModal] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [itinerary, setItinerary] = useState<DaySchedule[]>(INITIAL_ITINERARY);
   const [gameIdeas, setGameIdeas] = useState<GameIdea[]>([]);
@@ -45,13 +46,26 @@ const App: React.FC = () => {
   useEffect(() => {
     const savedUser = localStorage.getItem('trip_user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
+      if (parsedUser.name === '익명') {
+        setShowNameModal(true);
+      }
     } else {
       const anonymousUser = { id: 'anon-' + Math.random().toString(36).substr(2, 5), name: '익명' };
       setUser(anonymousUser);
       localStorage.setItem('trip_user', JSON.stringify(anonymousUser));
+      setShowNameModal(true);
     }
   }, []);
+
+  const handleSelectName = (name: string) => {
+    if (!user) return;
+    const updatedUser = { ...user, name };
+    setUser(updatedUser);
+    localStorage.setItem('trip_user', JSON.stringify(updatedUser));
+    setShowNameModal(false);
+  };
 
   // 2. Real-time Database Synchronization
   useEffect(() => {
@@ -211,6 +225,30 @@ const App: React.FC = () => {
       </main>
 
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* Name Selection Modal */}
+      {showNameModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
+          <div className="relative bg-white w-full max-w-xs rounded-[2.5rem] p-8 shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-black text-slate-800 mb-2">누구신가요?</h2>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Select Your Name</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {PAYERS.map(name => (
+                <button
+                  key={name}
+                  onClick={() => handleSelectName(name)}
+                  className="py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-600 font-black text-sm hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all active:scale-95"
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
