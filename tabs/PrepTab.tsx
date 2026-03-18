@@ -18,8 +18,12 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
 
   const filteredItems = useMemo(() => {
     const getIsChecked = (item: PrepItem) => {
-      if (item.isCommon) return item.isCompleted;
-      if (activeFilter === '전체') return false;
+      if (activeFilter === '전체') {
+        // 전체 리스트에서는 모든 담당자가 완료했을 때만 완료로 표시하거나, 
+        // 혹은 개별 상태를 보여주기 위해 기본적으로 미완료 상태로 둠 (요청에 따라 개별 표시 필요)
+        if (!item.assignedTo || item.assignedTo.length === 0) return item.isCompleted;
+        return item.assignedTo.every(member => item.completedBy?.includes(member));
+      }
       return item.completedBy?.includes(activeFilter) || false;
     };
 
@@ -43,7 +47,7 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
       });
     }
 
-    // 체크 안 된 항목 우선, 체크 된 항목 나중 (최신순 정렬은 유지하고 싶을 수 있으나 요청에 따라 상태 우선)
+    // 체크 안 된 항목 우선, 체크 된 항목 나중
     return [...items].sort((a, b) => {
       const aChecked = getIsChecked(a);
       const bChecked = getIsChecked(b);
@@ -62,24 +66,24 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
     onUpdate(prepItems.map(item => {
       if (item.id !== id) return item;
 
-      if (item.isCommon) {
-        // 공용 물품: 담당자만 체크 가능
-        const isAssignee = item.assignedTo?.includes(actingUser);
-        if (!isAssignee) return item;
+      // 공용/개인 상관없이 이제는 '누가 완료했는지'를 기준으로 관리
+      const currentCompletedBy = item.completedBy || [];
+      const isCurrentlyCompleted = currentCompletedBy.includes(actingUser);
+      
+      const newCompletedBy = isCurrentlyCompleted
+        ? currentCompletedBy.filter(name => name !== actingUser)
+        : [...currentCompletedBy, actingUser];
         
-        // 담당자가 체크하면 전체 완료 상태(isCompleted) 토글
-        return { ...item, isCompleted: !item.isCompleted };
-      } else {
-        // 개인 물품: 각자 체크 상태 관리 (completedBy 배열에 이름 추가/제거)
-        const currentCompletedBy = item.completedBy || [];
-        const isCurrentlyCompleted = currentCompletedBy.includes(actingUser);
-        
-        const newCompletedBy = isCurrentlyCompleted
-          ? currentCompletedBy.filter(name => name !== actingUser)
-          : [...currentCompletedBy, actingUser];
-          
-        return { ...item, completedBy: newCompletedBy };
-      }
+      // 모든 담당자가 완료했는지 여부 업데이트 (기존 isCompleted 필드 유지용)
+      const allAssignedCompleted = item.assignedTo && item.assignedTo.length > 0
+        ? item.assignedTo.every(member => newCompletedBy.includes(member))
+        : newCompletedBy.length > 0;
+
+      return { 
+        ...item, 
+        completedBy: newCompletedBy,
+        isCompleted: allAssignedCompleted
+      };
     }));
   };
 
@@ -305,15 +309,8 @@ interface MinimalListItemProps {
 const MinimalListItem: React.FC<MinimalListItemProps> = ({ item, activeFilter, user, onToggle, onRemove }) => {
   // 체크 여부 결정 로직
   const isChecked = useMemo(() => {
-    if (item.isCommon) {
-      // 공용 물품은 전역 완료 상태(isCompleted)를 따름
-      return item.isCompleted;
-    } else {
-      // 개인 물품은 현재 보고 있는 탭(activeFilter)의 사용자가 체크했는지 확인
-      // 만약 '전체' 탭이라면 체크 표시를 하지 않음 (사용자 요청: 전체 리스트 체크 불가능)
-      if (activeFilter === '전체') return false;
-      return item.completedBy?.includes(activeFilter) || false;
-    }
+    if (activeFilter === '전체') return false;
+    return item.completedBy?.includes(activeFilter) || false;
   }, [item, activeFilter]);
 
   // 체크 가능 여부 결정 로직
@@ -358,11 +355,21 @@ const MinimalListItem: React.FC<MinimalListItemProps> = ({ item, activeFilter, u
         </p>
         
         <div className="flex flex-wrap gap-1 shrink-0 justify-end">
-          {item.assignedTo && item.assignedTo.map(name => (
-            <span key={name} className="text-[9px] font-black text-indigo-500/80 bg-white/80 border border-indigo-100 px-1.5 py-0.5 rounded shadow-sm">
-              {name}
-            </span>
-          ))}
+          {item.assignedTo && item.assignedTo.map(name => {
+            const isMemberDone = item.completedBy?.includes(name);
+            return (
+              <span 
+                key={name} 
+                className={`text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm border transition-all ${
+                  isMemberDone 
+                    ? 'bg-slate-100 text-slate-400 border-slate-200 line-through' 
+                    : 'bg-white/80 text-indigo-500/80 border-indigo-100'
+                }`}
+              >
+                {name}
+              </span>
+            );
+          })}
           {/* 생성자 표시는 제거함 (사용자 요청) */}
           {!item.isCommon && item.createdBy === '시스템' && (
             <span className="text-[9px] font-black text-blue-400/80 bg-blue-50/80 border border-blue-100 px-1.5 py-0.5 rounded">
