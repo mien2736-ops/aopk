@@ -56,15 +56,15 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
     // 1. '전체' 리스트에서는 체크 불가능
     if (activeFilter === '전체') return;
     
-    // 2. 다른 사람의 탭에서는 체크 불가능 (본인 탭에서만 본인 것 체크 가능)
-    if (activeFilter !== user.name) return;
+    // 2. 현재 선택된 탭의 멤버(activeFilter)가 체크하는 것으로 간주
+    const actingUser = activeFilter;
 
     onUpdate(prepItems.map(item => {
       if (item.id !== id) return item;
 
       if (item.isCommon) {
         // 공용 물품: 담당자만 체크 가능
-        const isAssignee = item.assignedTo?.includes(user.name);
+        const isAssignee = item.assignedTo?.includes(actingUser);
         if (!isAssignee) return item;
         
         // 담당자가 체크하면 전체 완료 상태(isCompleted) 토글
@@ -72,11 +72,11 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
       } else {
         // 개인 물품: 각자 체크 상태 관리 (completedBy 배열에 이름 추가/제거)
         const currentCompletedBy = item.completedBy || [];
-        const isCurrentlyCompleted = currentCompletedBy.includes(user.name);
+        const isCurrentlyCompleted = currentCompletedBy.includes(actingUser);
         
         const newCompletedBy = isCurrentlyCompleted
-          ? currentCompletedBy.filter(name => name !== user.name)
-          : [...currentCompletedBy, user.name];
+          ? currentCompletedBy.filter(name => name !== actingUser)
+          : [...currentCompletedBy, actingUser];
           
         return { ...item, completedBy: newCompletedBy };
       }
@@ -95,23 +95,24 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
     e.preventDefault();
     if (!newItemText.trim()) return;
 
+    const actingUser = activeFilter === '전체' ? user.name : activeFilter;
+
     const newItem: PrepItem = {
       id: Math.random().toString(36).substr(2, 9),
       text: newItemText.trim(),
       isCommon: isCommonMode,
       isCompleted: false,
       completedBy: [],
-      createdBy: user.name
+      createdBy: actingUser
     };
 
     // 공용/개인 상관없이 선택된 담당자가 있으면 추가
     if (selectedAssignees.length > 0) {
       newItem.assignedTo = selectedAssignees;
     } else if (!isCommonMode) {
-      // 개인 물품인데 아무도 선택 안했으면 '나'를 담당자로 기본 지정
-      newItem.assignedTo = [user.name];
+      // 개인 물품인데 아무도 선택 안했으면 현재 탭의 멤버(또는 나)를 담당자로 기본 지정
+      newItem.assignedTo = [actingUser];
     }
-
     onUpdate([...prepItems, newItem]);
     setNewItemText('');
     setSelectedAssignees([]);
@@ -320,17 +321,15 @@ const MinimalListItem: React.FC<MinimalListItemProps> = ({ item, activeFilter, u
     // '전체' 리스트에서는 체크 불가능
     if (activeFilter === '전체') return false;
     
-    // 본인 탭이 아니면 체크 불가능
-    if (activeFilter !== user.name) return false;
-
+    // 현재 선택된 탭(activeFilter)의 멤버가 체크하는 것으로 간주
     if (item.isCommon) {
       // 공용 물품은 담당자만 체크 가능
-      return item.assignedTo?.includes(user.name) || false;
+      return item.assignedTo?.includes(activeFilter) || false;
     }
     
-    // 개인 물품은 본인 탭에서 자유롭게 체크 가능
+    // 개인 물품은 해당 멤버 탭에서 자유롭게 체크 가능
     return true;
-  }, [item, activeFilter, user.name]);
+  }, [item, activeFilter]);
 
   return (
     <div 
