@@ -15,28 +15,28 @@ export const PAYERS = ['은별', '소연', '다현', '우현', '희진', '민영
 
 export const RECOMMENDED_PREP_ITEMS: PrepItem[] = [
   // 공용 물품
-  { id: 'p-c1', text: '멀티콘센트 (멀티탭)', isCommon: true, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-c4', text: '일회용품 (수저, 젓가락, 컵, 접시)', isCommon: true, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-c5', text: '비상식량 (햇반, 김, 튜브고추장)', isCommon: true, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-c7', text: '주방세제 & 수세미', isCommon: true, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-c8', text: '세탁세제 (소량)', isCommon: true, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-c10', text: '물티슈 & 휴대용 티슈', isCommon: true, isCompleted: false, createdBy: '시스템' },
+  { id: 'p-c1', text: '멀티콘센트 (멀티탭)', isCommon: true, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-c4', text: '일회용품 (수저, 젓가락, 컵, 접시)', isCommon: true, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-c5', text: '비상식량 (햇반, 김, 튜브고추장)', isCommon: true, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-c7', text: '주방세제 & 수세미', isCommon: true, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-c8', text: '세탁세제 (소량)', isCommon: true, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-c10', text: '물티슈 & 휴대용 티슈', isCommon: true, isCompleted: false, completedBy: [], createdBy: '시스템' },
 
   // 개인 필수품 (시스템 생성 항목은 모든 멤버의 개인탭에 노출됨)
-  { id: 'p-p1', text: '여권 & 여권 사본', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p2', text: '항공권 (E-ticket)', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p3', text: '신용카드 & 현금(트래블로그 등)', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p4', text: '유심 또는 로밍 신청', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p5', text: '호텔/투어 바우처 출력본', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p6', text: '보조배터리 & 충전 케이블', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p7', text: '개인 세면도구 (칫솔, 치약, 면도기)', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p8', text: '화장품 & 선크림', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p9', text: '속옷 & 양말 (여유있게)', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p10', text: '수영복 / 래쉬가드 / 방수팩', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p11', text: '아쿠아슈즈 또는 슬리퍼', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p12', text: '선글라스 & 모자', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p13', text: '잠옷 (편한 옷)', isCommon: false, isCompleted: false, createdBy: '시스템' },
-  { id: 'p-p14', text: '목베개 & 안대 (비행기용)', isCommon: false, isCompleted: false, createdBy: '시스템' }
+  { id: 'p-p1', text: '여권 & 여권 사본', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p2', text: '항공권 (E-ticket)', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p3', text: '신용카드 & 현금(트래블로그 등)', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p4', text: '유심 또는 로밍 신청', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p5', text: '호텔/투어 바우처 출력본', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p6', text: '보조배터리 & 충전 케이블', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p7', text: '개인 세면도구 (칫솔, 치약, 면도기)', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p8', text: '화장품 & 선크림', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p9', text: '속옷 & 양말 (여유있게)', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p10', text: '수영복 / 래쉬가드 / 방수팩', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p11', text: '아쿠아슈즈 또는 슬리퍼', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p12', text: '선글라스 & 모자', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p13', text: '잠옷 (편한 옷)', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' },
+  { id: 'p-p14', text: '목베개 & 안대 (비행기용)', isCommon: false, isCompleted: false, completedBy: [], createdBy: '시스템' }
 ];
 
 export const INITIAL_ITINERARY: DaySchedule[] = [

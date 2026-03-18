@@ -17,27 +17,70 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
 
   const filteredItems = useMemo(() => {
-    if (activeFilter === '전체') return prepItems;
-    return prepItems.filter(item => {
-      // 1. '시스템'이 만든 개인 필수품은 모든 멤버의 개인탭에 노출
-      if (!item.isCommon && item.createdBy === '시스템') return true;
-      
-      // 2. 담당자(assignedTo)가 지정된 경우, 해당 담당자의 탭에 노출
-      if (item.assignedTo && item.assignedTo.includes(activeFilter)) return true;
-      
-      // 3. 담당자가 지정되지 않은 개인 물품은 생성자 본인의 탭에 노출
-      if (!item.isCommon && (!item.assignedTo || item.assignedTo.length === 0)) {
-        return item.createdBy === activeFilter;
-      }
-      
-      return false;
+    const getIsChecked = (item: PrepItem) => {
+      if (item.isCommon) return item.isCompleted;
+      if (activeFilter === '전체') return false;
+      return item.completedBy?.includes(activeFilter) || false;
+    };
+
+    let items = [];
+    if (activeFilter === '전체') {
+      items = prepItems;
+    } else {
+      items = prepItems.filter(item => {
+        // 1. '시스템'이 만든 개인 필수품은 모든 멤버의 개인탭에 노출
+        if (!item.isCommon && item.createdBy === '시스템') return true;
+        
+        // 2. 담당자(assignedTo)가 지정된 경우, 해당 담당자의 탭에 노출
+        if (item.assignedTo && item.assignedTo.includes(activeFilter)) return true;
+        
+        // 3. 담당자가 지정되지 않은 개인 물품은 생성자 본인의 탭에 노출
+        if (!item.isCommon && (!item.assignedTo || item.assignedTo.length === 0)) {
+          return item.createdBy === activeFilter;
+        }
+        
+        return false;
+      });
+    }
+
+    // 체크 안 된 항목 우선, 체크 된 항목 나중 (최신순 정렬은 유지하고 싶을 수 있으나 요청에 따라 상태 우선)
+    return [...items].sort((a, b) => {
+      const aChecked = getIsChecked(a);
+      const bChecked = getIsChecked(b);
+      if (aChecked === bChecked) return 0;
+      return aChecked ? 1 : -1;
     });
   }, [prepItems, activeFilter]);
 
   const toggleComplete = (id: string) => {
-    onUpdate(prepItems.map(item => 
-      item.id === id ? { ...item, isCompleted: !item.isCompleted } : item
-    ));
+    // 1. '전체' 리스트에서는 체크 불가능
+    if (activeFilter === '전체') return;
+    
+    // 2. 다른 사람의 탭에서는 체크 불가능 (본인 탭에서만 본인 것 체크 가능)
+    if (activeFilter !== user.name) return;
+
+    onUpdate(prepItems.map(item => {
+      if (item.id !== id) return item;
+
+      if (item.isCommon) {
+        // 공용 물품: 담당자만 체크 가능
+        const isAssignee = item.assignedTo?.includes(user.name);
+        if (!isAssignee) return item;
+        
+        // 담당자가 체크하면 전체 완료 상태(isCompleted) 토글
+        return { ...item, isCompleted: !item.isCompleted };
+      } else {
+        // 개인 물품: 각자 체크 상태 관리 (completedBy 배열에 이름 추가/제거)
+        const currentCompletedBy = item.completedBy || [];
+        const isCurrentlyCompleted = currentCompletedBy.includes(user.name);
+        
+        const newCompletedBy = isCurrentlyCompleted
+          ? currentCompletedBy.filter(name => name !== user.name)
+          : [...currentCompletedBy, user.name];
+          
+        return { ...item, completedBy: newCompletedBy };
+      }
+    }));
   };
 
   const toggleAssignee = (name: string) => {
@@ -57,6 +100,7 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
       text: newItemText.trim(),
       isCommon: isCommonMode,
       isCompleted: false,
+      completedBy: [],
       createdBy: user.name
     };
 
@@ -189,8 +233,15 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
                 <LayoutList size={12} /> 공용물품 리스트
               </h3>
               <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-                {prepItems.filter(i => i.isCommon).map(item => (
-                  <MinimalListItem key={item.id} item={item} onToggle={toggleComplete} onRemove={removeItem} />
+                {filteredItems.filter(i => i.isCommon).map(item => (
+                  <MinimalListItem 
+                    key={item.id} 
+                    item={item} 
+                    activeFilter={activeFilter}
+                    user={user}
+                    onToggle={toggleComplete} 
+                    onRemove={removeItem} 
+                  />
                 ))}
               </div>
             </div>
@@ -200,8 +251,15 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
                 <User size={12} /> 개인물품 리스트
               </h3>
               <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-                {prepItems.filter(i => !i.isCommon).map(item => (
-                  <MinimalListItem key={item.id} item={item} onToggle={toggleComplete} onRemove={removeItem} />
+                {filteredItems.filter(i => !i.isCommon).map(item => (
+                  <MinimalListItem 
+                    key={item.id} 
+                    item={item} 
+                    activeFilter={activeFilter}
+                    user={user}
+                    onToggle={toggleComplete} 
+                    onRemove={removeItem} 
+                  />
                 ))}
               </div>
             </div>
@@ -213,7 +271,14 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
             </h3>
             <div className="space-y-0.5 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
               {filteredItems.map(item => (
-                <MinimalListItem key={item.id} item={item} onToggle={toggleComplete} onRemove={removeItem} />
+                <MinimalListItem 
+                  key={item.id} 
+                  item={item} 
+                  activeFilter={activeFilter}
+                  user={user}
+                  onToggle={toggleComplete} 
+                  onRemove={removeItem} 
+                />
               ))}
               {filteredItems.length === 0 && (
                 <div className="text-center py-12 bg-white">
@@ -230,28 +295,66 @@ const PrepTab: React.FC<PrepTabProps> = ({ prepItems, onUpdate, user }) => {
 
 interface MinimalListItemProps {
   item: PrepItem;
+  activeFilter: string;
+  user: UserType;
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
 }
 
-const MinimalListItem: React.FC<MinimalListItemProps> = ({ item, onToggle, onRemove }) => {
+const MinimalListItem: React.FC<MinimalListItemProps> = ({ item, activeFilter, user, onToggle, onRemove }) => {
+  // 체크 여부 결정 로직
+  const isChecked = useMemo(() => {
+    if (item.isCommon) {
+      // 공용 물품은 전역 완료 상태(isCompleted)를 따름
+      return item.isCompleted;
+    } else {
+      // 개인 물품은 현재 보고 있는 탭(activeFilter)의 사용자가 체크했는지 확인
+      // 만약 '전체' 탭이라면 체크 표시를 하지 않음 (사용자 요청: 전체 리스트 체크 불가능)
+      if (activeFilter === '전체') return false;
+      return item.completedBy?.includes(activeFilter) || false;
+    }
+  }, [item, activeFilter]);
+
+  // 체크 가능 여부 결정 로직
+  const canToggle = useMemo(() => {
+    // '전체' 리스트에서는 체크 불가능
+    if (activeFilter === '전체') return false;
+    
+    // 본인 탭이 아니면 체크 불가능
+    if (activeFilter !== user.name) return false;
+
+    if (item.isCommon) {
+      // 공용 물품은 담당자만 체크 가능
+      return item.assignedTo?.includes(user.name) || false;
+    }
+    
+    // 개인 물품은 본인 탭에서 자유롭게 체크 가능
+    return true;
+  }, [item, activeFilter, user.name]);
+
   return (
     <div 
       className={`group flex items-center gap-3 py-3 px-4 transition-all ${
         item.isCommon 
-          ? 'bg-indigo-50/40 hover:bg-indigo-50/60' 
-          : 'bg-white hover:bg-slate-50'
-      } ${item.isCompleted ? 'opacity-40 grayscale-[0.5]' : ''}`}
+          ? (isChecked ? 'bg-slate-100/50' : 'bg-indigo-50/40 hover:bg-indigo-50/60') 
+          : (isChecked ? 'bg-slate-50' : 'bg-white hover:bg-slate-50')
+      } ${isChecked ? 'opacity-50 grayscale-[0.8]' : ''}`}
     >
       <button 
-        onClick={() => onToggle(item.id)}
-        className={`shrink-0 transition-colors ${item.isCompleted ? 'text-indigo-500' : 'text-slate-200 hover:text-slate-300'}`}
+        onClick={() => canToggle && onToggle(item.id)}
+        disabled={!canToggle}
+        className={`shrink-0 transition-colors ${
+          isChecked ? 'text-indigo-500' : 'text-slate-200'
+        } ${!canToggle ? 'cursor-default' : 'hover:text-slate-300'}`}
       >
-        {item.isCompleted ? <CheckCircle2 size={20} fill="currentColor" className="text-white" /> : <Circle size={20} />}
+        {isChecked ? <CheckCircle2 size={20} fill="currentColor" className="text-white" /> : <Circle size={20} />}
       </button>
       
-      <div className="flex-1 min-w-0 flex items-center justify-between gap-2" onClick={() => onToggle(item.id)}>
-        <p className={`text-[13px] font-medium leading-tight truncate ${item.isCompleted ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+      <div 
+        className={`flex-1 min-w-0 flex items-center justify-between gap-2 ${canToggle ? 'cursor-pointer' : 'cursor-default'}`} 
+        onClick={() => canToggle && onToggle(item.id)}
+      >
+        <p className={`text-[13px] font-medium leading-tight truncate ${isChecked ? 'line-through text-slate-400' : 'text-slate-700'}`}>
           {item.text}
         </p>
         

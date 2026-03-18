@@ -55,7 +55,8 @@ export interface PrepItem {
   text: string;
   isCommon: boolean;
   assignedTo?: string[]; // 다중 담당자 지원을 위해 배열로 변경
-  isCompleted: boolean;
+  isCompleted: boolean; // 공용 물품의 전체 완료 상태 (담당자가 체크 시 true)
+  completedBy?: string[]; // 개인별 완료 상태를 추적하기 위한 사용자 이름 배열
   createdBy: string;
 }
 
